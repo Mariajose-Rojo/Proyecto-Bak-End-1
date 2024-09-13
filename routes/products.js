@@ -1,55 +1,74 @@
-const express = require('express');
-const fs = require('fs');
+import express from 'express';
+import fs from 'fs/promises';  // Importo fs.promises
+import path from 'path';
+
 const router = express.Router();
-const filePath = './data/products.json';
+const rutaArchivoProductos = path.join(__dirname, '../data/productos.json');  // Ruta al archivo json que almacena los productos
 
-// Helper para leer productos
-const readProducts = () => {
+// Funcion para leer los productos
+const leerProductos = async () => {
   try {
-    const data = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(data);
+    const datos = await fs.readFile(rutaArchivoProductos, 'utf-8');
+    return JSON.parse(datos);
   } catch (error) {
-    console.error('Error leyendo el archivo de productos:', error);
-    return [];
+    console.error('Error al leer productos:', error);
+    throw error;
   }
 };
 
-// Helper para guardar productos
-const saveProducts = (products) => {
-  fs.writeFileSync(filePath, JSON.stringify(products, null, 2), 'utf-8');
+// Funcion para guardar productos en el archivo json
+const guardarProductos = async (productos) => {
+  try {
+    await fs.writeFile(rutaArchivoProductos, JSON.stringify(productos, null, 2), 'utf-8');
+  } catch (error) {
+    console.error('Error al guardar productos:', error);
+    throw error;
+  }
 };
 
-// Ruta para actualizar un producto existente por ID
-router.put('/:pid', (req, res) => {
-  const pid = req.params.pid;
-  const updatedProduct = req.body;
-  const products = readProducts();
+// Ruta PUT,actualiza un producto existente por ID
+router.put('/:pid', async (req, res) => {
+  const pid = req.params.pid; // obtiene el id de la url
+  const productoActualizado = req.body; // obtiene los datos actualizados con la solicitud
 
-  const productIndex = products.findIndex(p => p.id === pid);
+  try {
+    const productos = await leerProductos(); // lee todos los productos del archivo
 
-  if (productIndex === -1) {
-    return res.status(404).json({ message: 'Producto no encontrado' });
+    const indiceProducto = productos.findIndex(p => p.id === pid); //busca por su indice al archivo que se debe actualizar
+
+    if (indiceProducto === -1) {
+      return res.status(404).json({ mensaje: 'Producto no encontrado' });
+    }
+
+    // Mantener el ID original del producto y actualizar el resto
+    productos[indiceProducto] = { ...productos[indiceProducto], ...productoActualizado, id: pid };
+
+    await guardarProductos(productos); // Guardar los cambios en el archivo json
+    res.json({ mensaje: 'Producto actualizado con éxito', producto: productos[indiceProducto] });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al actualizar el producto' });
   }
-
-  products[productIndex] = { ...products[productIndex], ...updatedProduct, id: pid };
-  saveProducts(products);
-  res.json({ message: 'Producto actualizado con éxito', product: products[productIndex] });
 });
 
-// Ruta para eliminar un producto por ID
-router.delete('/:pid', (req, res) => {
-  const pid = req.params.pid;
-  const products = readProducts();
+// Ruta DELETE: elimina a un producto por su id
+router.delete('/:pid', async (req, res) => {
+  const pid = req.params.pid; // obtiene el id 
 
-  const productIndex = products.findIndex(p => p.id === pid);
+  try {
+    const productos = await leerProductos(); 
 
-  if (productIndex === -1) {
-    return res.status(404).json({ message: 'Producto no encontrado' });
+    const indiceProducto = productos.findIndex(p => p.id === pid); // busca el indice del prodcuto a eliminar
+
+    if (indiceProducto === -1) {
+      return res.status(404).json({ mensaje: 'Producto no encontrado' });
+    }
+
+    productos.splice(indiceProducto, 1); // elimina al prosducto del array
+    await guardarProductos(productos); // guarda loos cambios en el json
+    res.json({ mensaje: 'Producto eliminado con éxito' });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al eliminar el producto' });
   }
-
-  products.splice(productIndex, 1);
-  saveProducts(products);
-  res.json({ message: 'Producto eliminado con éxito' });
 });
 
-module.exports = router;
+export default router;
