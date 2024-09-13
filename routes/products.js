@@ -1,15 +1,15 @@
 const express = require('express');
 const fs = require('fs');
 const router = express.Router();
-const filePath = './data/products.json'; // Ruta al archivo JSON que almacena los productos
+const filePath = './data/products.json'; // Ruta al archivo json que almacena los productos
 
-// Leo los productos del JSON
+// Leo los productos
 const readProducts = () => {
   const data = fs.readFileSync(filePath, 'utf-8');
   return JSON.parse(data);
 };
 
-// Guardo productos en el JSON
+// Guardo productos en el json
 const saveProducts = (products) => {
   fs.writeFileSync(filePath, JSON.stringify(products, null, 2), 'utf-8');
 };
@@ -29,7 +29,7 @@ router.put('/:pid', (req, res) => {
   // Mantengo el ID original del producto y actualizo el resto
   products[productIndex] = { ...products[productIndex], ...updatedProduct, id: pid };
 
-  saveProducts(products); // Guardolos cambios en el JSON
+  saveProducts(products); // Guardolos cambios en el json
   res.json({ message: 'Producto actualizado con éxito', product: products[productIndex] });
 });
 
