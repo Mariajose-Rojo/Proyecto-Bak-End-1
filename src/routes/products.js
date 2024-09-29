@@ -1,11 +1,16 @@
+// src/routes/products.js
 import express from 'express';
-import fs from 'fs/promises';  // Importo fs.promises
+import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
 import path from 'path';
 
-const router = express.Router();
-const rutaArchivoProductos = path.join(__dirname, '../data/productos.json');  // Ruta al archivo json que almacena los productos
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Funcion para leer los productos
+const router = express.Router();
+const rutaArchivoProductos = path.join(__dirname, '../data/products.json');
+
+// Función para leer los productos
 const leerProductos = async () => {
   try {
     const datos = await fs.readFile(rutaArchivoProductos, 'utf-8');
@@ -16,7 +21,7 @@ const leerProductos = async () => {
   }
 };
 
-// Funcion para guardar productos en el archivo json
+// Función para guardar productos
 const guardarProductos = async (productos) => {
   try {
     await fs.writeFile(rutaArchivoProductos, JSON.stringify(productos, null, 2), 'utf-8');
@@ -26,45 +31,42 @@ const guardarProductos = async (productos) => {
   }
 };
 
-// Ruta PUT,actualiza un producto existente por ID
+// Ruta PUT para actualizar un producto por ID
 router.put('/:pid', async (req, res) => {
-  const pid = req.params.pid; // obtiene el id de la url
-  const productoActualizado = req.body; // obtiene los datos actualizados con la solicitud
+  const pid = req.params.pid;
+  const productoActualizado = req.body;
 
   try {
-    const productos = await leerProductos(); // lee todos los productos del archivo
-
-    const indiceProducto = productos.findIndex(p => p.id === pid); //busca por su indice al archivo que se debe actualizar
+    const productos = await leerProductos();
+    const indiceProducto = productos.findIndex(p => p.id === pid);
 
     if (indiceProducto === -1) {
       return res.status(404).json({ mensaje: 'Producto no encontrado' });
     }
 
-    // Mantener el ID original del producto y actualizar el resto
     productos[indiceProducto] = { ...productos[indiceProducto], ...productoActualizado, id: pid };
 
-    await guardarProductos(productos); // Guardar los cambios en el archivo json
+    await guardarProductos(productos);
     res.json({ mensaje: 'Producto actualizado con éxito', producto: productos[indiceProducto] });
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al actualizar el producto' });
   }
 });
 
-// Ruta DELETE: elimina a un producto por su id
+// Ruta DELETE para eliminar un producto por ID
 router.delete('/:pid', async (req, res) => {
-  const pid = req.params.pid; // obtiene el id 
+  const pid = req.params.pid;
 
   try {
-    const productos = await leerProductos(); 
-
-    const indiceProducto = productos.findIndex(p => p.id === pid); // busca el indice del prodcuto a eliminar
+    const productos = await leerProductos();
+    const indiceProducto = productos.findIndex(p => p.id === pid);
 
     if (indiceProducto === -1) {
       return res.status(404).json({ mensaje: 'Producto no encontrado' });
     }
 
-    productos.splice(indiceProducto, 1); // elimina al prosducto del array
-    await guardarProductos(productos); // guarda loos cambios en el json
+    productos.splice(indiceProducto, 1);
+    await guardarProductos(productos);
     res.json({ mensaje: 'Producto eliminado con éxito' });
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al eliminar el producto' });

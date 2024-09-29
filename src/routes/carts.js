@@ -1,13 +1,19 @@
+// src/routes/cart.js
 import express from 'express';
-import fs from 'fs/promises';  // Importo fs.promises
+import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
 import path from 'path';
+
+// Configuración de __dirname y __filename para módulos ES6
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-const rutaArchivoCarritos = path.join(__dirname, '../data/carritos.json'); // Ruta del archivo de carritos
-const rutaArchivoProductos = path.join(__dirname, '../data/productos.json'); // Ruta del archivo de productos
+const rutaArchivoCarritos = path.join(__dirname, '../data/cart.json'); // Asegúrate de que el archivo cart.json existe
+const rutaArchivoProductos = path.join(__dirname, '../data/products.json'); // Asegúrate de que el archivo products.json existe
 
-// Funcion para leer el archivo de carritos
+// Función para leer el archivo de carritos
 const leerArchivoCarritos = async () => {
   try {
     const datos = await fs.readFile(rutaArchivoCarritos, 'utf-8');
@@ -18,23 +24,12 @@ const leerArchivoCarritos = async () => {
   }
 };
 
-// Funcion para escribir en el archivo de carritos
+// Función para escribir en el archivo de carritos
 const escribirArchivoCarritos = async (datos) => {
   try {
     await fs.writeFile(rutaArchivoCarritos, JSON.stringify(datos, null, 2));
   } catch (error) {
     console.error('Error al escribir carritos:', error);
-    throw error;
-  }
-};
-
-// Funcion para leer el archivo de productos
-const leerArchivoProductos = async () => {
-  try {
-    const datos = await fs.readFile(rutaArchivoProductos, 'utf-8');
-    return JSON.parse(datos);
-  } catch (error) {
-    console.error('Error al leer productos:', error);
     throw error;
   }
 };
@@ -63,12 +58,12 @@ router.post('/:cid/product/:pid', async (req, res) => {
 
   try {
     const carritos = await leerArchivoCarritos();
-    const productos = await leerArchivoProductos();
+    const productos = await fs.readFile(rutaArchivoProductos, 'utf-8').then(JSON.parse);
 
     const indiceCarrito = carritos.findIndex(c => c.id === cid);
 
     if (indiceCarrito === -1) {
-      return res.status(404).json({ error: 'Carrito no encontrado' }); //404 siempre que no se encuentre un elemento
+      return res.status(404).json({ error: 'Carrito no encontrado' });
     }
 
     const productoExistente = productos.find(p => p.id === pid);
@@ -80,17 +75,15 @@ router.post('/:cid/product/:pid', async (req, res) => {
     const productoEnCarrito = carrito.productos.find(p => p.producto === pid);
 
     if (productoEnCarrito) {
-      // Incremrnto la cant si el producto ya existe en el carrito
       productoEnCarrito.cantidad += 1;
     } else {
-      // agrego el producto al carrito con cant 1 si no existe
       carrito.productos.push({ producto: pid, cantidad: 1 });
     }
 
-    carritos[indiceCarrito] = carrito; // actualizao el carrito
-    await escribirArchivoCarritos(carritos); // guardo el archivo
+    carritos[indiceCarrito] = carrito;
+    await escribirArchivoCarritos(carritos);
 
-    res.json(carrito); // Devuelve el carritoa actualizado
+    res.json(carrito);
   } catch (error) {
     res.status(500).json({ error: 'Error al agregar el producto al carrito' });
   }
