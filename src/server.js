@@ -35,11 +35,20 @@ app.get('/realtimeproducts', (req, res) => {
   res.render('realTimeProducts'); // Renderiza la vista realTimeProducts.handlebars
 });
 
-// Evento de conexión de Socket.IO
+let products = []; // alamacena la lista de productos
+
 io.on('connection', (socket) => {
   console.log('Nuevo cliente conectado');
 
-  // Aca puedo poner el sweet alert
+  // envia los productos a los clientes
+  socket.emit('updateProducts', products);
+
+  // creacuion de nuevos productos
+  socket.on('newProduct', (product) => {
+    products.push(product);
+    io.emit('updateProducts', products); // actualizacion de los datos de los clientes
+  });
+
 });
 
 // Iniciar el servidor
