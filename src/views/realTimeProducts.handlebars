@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Real Time Products</title>
+  <title>Productos en Tiempo Real</title>
 </head>
 <body>
-  <h1>Real Time Products</h1>
+  <h1>Productos en Tiempo Real</h1>
   <ul id="product-list">
     {{#each products}}
       <li>{{this.name}} - {{this.price}}</li>
@@ -15,22 +15,22 @@
 
   <!-- form para agregar producto -->
   <form id="add-product-form">
-    <input type="text" id="productName" placeholder="Product Name" required>
-    <input type="number" id="productPrice" placeholder="Product Price" required>
-    <button type="submit">Add Product</button>
+    <input type="text" id="productName" placeholder="Nombre del Producto" required>
+    <input type="number" id="productPrice" placeholder="Precio del Producto" required>
+    <button type="submit">Agregar Producto</button>
   </form>
 
-  <!-- Sweetalert 2 -->
+  <!-- sweetalert 2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
 
-    // evento para actualizar productos
+    // actualizar la lista de productos en tiempo real
     socket.on('updateProducts', (products) => {
       const productList = document.getElementById('product-list');
-      productList.innerHTML = '';  // Limpia la lista de productos
+      productList.innerHTML = '';  // lipmia la lista de productos
       products.forEach(product => {
         const li = document.createElement('li');
         li.textContent = `${product.name} - ${product.price}`;
@@ -38,25 +38,26 @@
       });
     });
 
-    // alerta para cuando se agrega un nuevo porducto
+    // mostrar alerta cuando se agrega un nuevo producto
     socket.on('productAdded', (product) => {
       Swal.fire({
-        title: 'Product Added!',
-        text: `The product ${product.name} has been added successfully.`,
+        title: '¡Producto agregado!',
+        text: `El producto ${product.name} ha sido agregado con éxito.`,
         icon: 'success',
         confirmButtonText: 'OK'
       });
     });
 
-    // envia el nuevo porducto al servidor con un formulariuo
+    // pasa el nuevo producto al servidor con el formulario
     const form = document.getElementById('add-product-form');
     form.addEventListener('submit', (event) => {
       event.preventDefault();
       const name = document.getElementById('productName').value;
       const price = document.getElementById('productPrice').value;
+
       socket.emit('newProduct', { name, price });
 
-      //limpiar el form
+      // limpia el formulario
       form.reset();
     });
   </script>
