@@ -1,44 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Productos en Tiempo Real</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real Time Products</title>
 </head>
 <body>
-    <h1>Lista de Productos en Tiempo Real</h1>
-    <ul id="productList"></ul>
-    
-    <form id="productForm">
-        <input type="text" id="productName" placeholder="Nombre del producto" required>
-        <input type="number" id="productPrice" placeholder="Precio" required>
-        <button type="submit">Agregar Producto</button>
-    </form>
+  <h1>Real Time Products</h1>
+  <ul id="product-list">
+    {{#each products}}
+      <li>{{this.name}} - {{this.price}}</li>
+    {{/each}}
+  </ul>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
+  <!-- form para agregar producto -->
+  <form id="add-product-form">
+    <input type="text" id="productName" placeholder="Product Name" required>
+    <input type="number" id="productPrice" placeholder="Product Price" required>
+    <button type="submit">Add Product</button>
+  </form>
 
-        // Enviar producto nuevo
-        document.getElementById('productForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const name = document.getElementById('productName').value;
-            const price = document.getElementById('productPrice').value;
+  <!-- Sweetalert 2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-            socket.emit('newProduct', { name, price });
-            document.getElementById('productForm').reset();
-        });
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
 
-        // Escuchar nuevos productos
-        socket.on('updateProducts', (products) => {
-            const productList = document.getElementById('productList');
-            productList.innerHTML = '';
-            products.forEach(product => {
-                const li = document.createElement('li');
-                li.textContent = `${product.name} - ${product.price}`;
-                productList.appendChild(li);
-            });
-        });
-    </script>
+    // evento para actualizar productos
+    socket.on('updateProducts', (products) => {
+      const productList = document.getElementById('product-list');
+      productList.innerHTML = '';  // Limpia la lista de productos
+      products.forEach(product => {
+        const li = document.createElement('li');
+        li.textContent = `${product.name} - ${product.price}`;
+        productList.appendChild(li);
+      });
+    });
+
+    // alerta para cuando se agrega un nuevo porducto
+    socket.on('productAdded', (product) => {
+      Swal.fire({
+        title: 'Product Added!',
+        text: `The product ${product.name} has been added successfully.`,
+        icon: 'success',
+        confirmButtonText: 'OK'
+      });
+    });
+
+    // envia el nuevo porducto al servidor con un formulariuo
+    const form = document.getElementById('add-product-form');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const name = document.getElementById('productName').value;
+      const price = document.getElementById('productPrice').value;
+      socket.emit('newProduct', { name, price });
+
+      //limpiar el form
+      form.reset();
+    });
+  </script>
 </body>
 </html>
